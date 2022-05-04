@@ -119,10 +119,7 @@ class Netlist:
         return self.net_names[net]
 
     def get_tfi(self, net: Net, visited=None):
-        """
-        Returns the set of nets in the union of the transistve fan-ins of
-        the input nets
-        """
+        """Returns the set of nets in the transistve fan-in of the input net"""
         if visited is None:
             visited = set()
         visited = visited.union({net})
@@ -132,7 +129,10 @@ class Netlist:
             return visited
 
         cell = self.top.cells[self.conn_map[net]]
-        cell_inputs = filter(lambda conn: cell.port_directions[conn] == "input", cell.connections)
+        cell_inputs = filter(
+            lambda conn: cell.port_directions[conn] == "input",
+            cell.connections
+        )
         cell_drivers = map(lambda conn: cell.connections[conn][0], cell_inputs)
 
         for driver in cell_drivers:
@@ -140,37 +140,80 @@ class Netlist:
                 visited = self.get_tfi(driver, visited)
         return visited
 
-    # Returns the set of nets in the union of the TFIs of the supplied nets
     def get_tfi_union(self, nets: List[Net]):
+        """
+        Returns the set of nets in the union of the transistve fan-ins of
+        the input nets
+        """
         visited: Set[Net] = set()
         for net in nets:
             visited = self.get_tfi(net, visited)
         return visited
 
+    def get_tfi_system(self, nets: List[Net]) -> TransitionSystem:
+        """
+        Returns the set of nets in the transitive fan-in of the input net, as
+        well as a transition system representing the relations between these
+        nets
+        """
+        tfi = self.get_tfi_union(nets)
+
+        # Create map from nets to smt symbols, and name symbols according to
+        # net names
+        symb_map: DefaultDict[Net, Symbol] = defaultdict(FreshSymbol)
+        symb_map.update({net: Symbol(n.name_from_net(net)) for net in tfi})
+
+        system = TransitionSystem(set(), [], [])
+        visited_cells = set()
+
+        for net in tfi:
+            # Primary inputs dont have drivers
+            if net not in self.conn_map:
+                assert self.net_names[net] in self.top.ports
+                continue
+
+            # Don't include cells with more than one output net (e.g. DFF with
+            # Q and nQ) more than once
+            cell_name = self.conn_map[net]
+            if cell_name in visited_cells:
+                continue
+            visited_cells.add(cell_name)
+            cell = self.top.cells[cell_name]
+
+            # Create substitutions for mapping cell into transition system
+            subs = {
+                Symbol(name): symb_map[conn[0]]
+                for name, conn in cell.connections.items()
+            }
+
+            # Merge cell into the transition system
+            system.merge_system(self.cells[cell.type], subs)
+
+            # Make sure all the nets in fan-in end up in the transition system
+            assert symb_map[net] in system.variables
+
+        return tfi, system
+
 n = Netlist("design/TEAMF_DESIGN.json", "design/d2lib.json")
-
-symb_map: DefaultDict[Net, Symbol] = defaultdict(FreshSymbol)
-
-for (name, net) in n.top.netnames.items():
-    symb_map[net.bits[0]] = Symbol(name)
-
-t = TransitionSystem(set(iter(symb_map.values())), [], [])
-for cell in n.top.cells.values():
-    subs = {}
-    for name, conn in cell.connections.items():
-        subs[Symbol(name)] = symb_map[conn[0]]
-
-    t.variables.update(set(iter(symb_map.values())))
-    t.merge_system(n.cells[cell.type], subs)
-
-from cover_bmc import CoverBMC
+_, system = n.get_tfi_system(list(map(n.net_from_name, [
+    "Q8",
+    "Q9",
+    "Q10",
+    "Q11",
+    "Q12",
+    "Q13",
+    "Q14",
+    "Q15",
+    "Q16",
+])))
 
 def sym(name):
-    return symb_map[n.net_from_name(name)]
+    return Symbol(name)
 
 cover = [And(Not(sym("Q16")), sym("Q15"), Not(sym("Q14")), sym("Q13"), sym("Q10"))]
 
-t.add_init(Not(sym("A14")))
-c = CoverBMC(t)
+system.add_init(Not(sym("A14")))
 
-model, time = c.generate_trace(cover)
+from cover_bmc import CoverBMC
+bmc = CoverBMC(system)
+model, time = bmc.generate_trace(cover)
