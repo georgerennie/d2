@@ -2,12 +2,16 @@ from __future__ import annotations
 from typing import List, Dict, Set, Optional
 from pysmt.shortcuts import Symbol, And, FreshSymbol
 
-class TransitionSystem():
+
+class TransitionSystem:
     """Trivial representation of a Transition System."""
-    def __init__(self,
-                 variables: Optional[Set[Symbol]] = None,
-                 init: Optional[List[Symbol]] = None,
-                 trans: Optional[List[Symbol]] = None):
+
+    def __init__(
+        self,
+        variables: Optional[Set[Symbol]] = None,
+        init: Optional[List[Symbol]] = None,
+        trans: Optional[List[Symbol]] = None,
+    ):
         self._variables = variables or set()
         self._init = init or []
         self._trans = trans or []

@@ -10,9 +10,11 @@ from pysmt.shortcuts import get_model, And, Or, Symbol, Solver
 from pysmt.logics import QF_BV
 from transition_system import TransitionSystem
 
+
 class CoverBMC:
     """Bounded model checker that generates traces covering a set of properties"""
-    def __init__(self, system: TransitionSystem, solver: str = "yices", logic = QF_BV):
+
+    def __init__(self, system: TransitionSystem, solver: str = "yices", logic=QF_BV):
         self.system = system
         self.solver = solver
         self.logic = logic
@@ -41,7 +43,9 @@ class CoverBMC:
         properties. Returns a pysmt model that can be probed for values, and
         the final timestep
         """
-        with Solver(name=self.solver, logic=self.logic, incremental=True, generate_models=True) as s:
+        with Solver(
+            name=self.solver, logic=self.logic, incremental=True, generate_models=True
+        ) as s:
             # Initial state
             s.add_assertion(self.system.init().substitute(self.get_subs(0)))
 
