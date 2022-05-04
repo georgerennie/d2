@@ -20,7 +20,7 @@ class CoverBMC:
     def get_subs(self, t: int):
         """Builds a map from x to x@t and from x' to x@(t+1), for all x in system"""
         subs_t = {}
-        for v in self.system.variables:
+        for v in self.system.variables():
             subs_t[v] = TransitionSystem.at_time(v, t)
             subs_t[TransitionSystem.next_symb(v)] = TransitionSystem.at_time(v, t + 1)
         return subs_t

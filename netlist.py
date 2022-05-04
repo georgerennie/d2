@@ -1,6 +1,7 @@
 import json
 from prodict import Prodict
-from typing import NewType, List, DefaultDict, Set
+from typing import NewType, List, DefaultDict, Set, Optional
+from collections.abc import Iterable
 from collections import defaultdict
 from pysmt.shortcuts import Symbol, FreshSymbol, And, Not, FALSE
 from transition_system import TransitionSystem
@@ -118,11 +119,9 @@ class Netlist:
     def name_from_net(self, net: Net) -> str:
         return self.net_names[net]
 
-    def get_tfi(self, net: Net, visited=None):
+    def get_tfi(self, net: Net, maybe_visited: Optional[Set[Net]] = None):
         """Returns the set of nets in the transistve fan-in of the input net"""
-        if visited is None:
-            visited = set()
-        visited = visited.union({net})
+        visited: Set[Net] = {net} if not maybe_visited else maybe_visited.union({net})
 
         if net not in self.conn_map:
             assert self.net_names[net] in self.top.ports
@@ -140,7 +139,7 @@ class Netlist:
                 visited = self.get_tfi(driver, visited)
         return visited
 
-    def get_tfi_union(self, nets: List[Net]):
+    def get_tfi_union(self, nets: Iterable[Net]):
         """
         Returns the set of nets in the union of the transistve fan-ins of
         the input nets
@@ -150,23 +149,21 @@ class Netlist:
             visited = self.get_tfi(net, visited)
         return visited
 
-    def get_tfi_system(self, nets: List[Net]) -> TransitionSystem:
+    def get_driver_system(self, nets: Iterable[Net]) -> TransitionSystem:
         """
-        Returns the set of nets in the transitive fan-in of the input net, as
-        well as a transition system representing the relations between these
-        nets
+        Returns a transition system containing the logic for the cell driving
+        each net in nets. This doesn't guarantee that the driver logic for that
+        cell is included
         """
-        tfi = self.get_tfi_union(nets)
-
         # Create map from nets to smt symbols, and name symbols according to
         # net names
         symb_map: DefaultDict[Net, Symbol] = defaultdict(FreshSymbol)
-        symb_map.update({net: Symbol(n.name_from_net(net)) for net in tfi})
+        symb_map.update({net: Symbol(n.name_from_net(net)) for net in nets})
 
-        system = TransitionSystem(set(), [], [])
+        system = TransitionSystem()
         visited_cells = set()
 
-        for net in tfi:
+        for net in nets:
             # Primary inputs dont have drivers
             if net not in self.conn_map:
                 assert self.net_names[net] in self.top.ports
@@ -190,12 +187,12 @@ class Netlist:
             system.merge_system(self.cells[cell.type], subs)
 
             # Make sure all the nets in fan-in end up in the transition system
-            assert symb_map[net] in system.variables
+            assert symb_map[net] in system.variables()
 
-        return tfi, system
+        return system
 
 n = Netlist("design/TEAMF_DESIGN.json", "design/d2lib.json")
-_, system = n.get_tfi_system(list(map(n.net_from_name, [
+system = n.get_driver_system(n.get_tfi_union(list(map(n.net_from_name, [
     "Q8",
     "Q9",
     "Q10",
@@ -205,13 +202,12 @@ _, system = n.get_tfi_system(list(map(n.net_from_name, [
     "Q14",
     "Q15",
     "Q16",
-])))
+]))))
 
 def sym(name):
     return Symbol(name)
 
 cover = [And(Not(sym("Q16")), sym("Q15"), Not(sym("Q14")), sym("Q13"), sym("Q10"))]
-
 system.add_init(Not(sym("A14")))
 
 from cover_bmc import CoverBMC
