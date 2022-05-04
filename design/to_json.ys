@@ -1,0 +1,15 @@
+#! /usr/bin/env yosys
+
+read_verilog -lib d2lib.v
+read_verilog TEAMF_DESIGN.v
+hierarchy -top TEAMF_DESIGN
+flatten
+opt_clean -purge
+write_json TEAMF_DESIGN.json
+stat
+
+delete
+read_verilog d2lib.v
+proc
+opt_clean -purge
+write_json d2lib.json
