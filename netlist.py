@@ -1,6 +1,6 @@
 import json
 from prodict import Prodict
-from typing import NewType, List, DefaultDict, Set, Optional
+from typing import NewType, List, DefaultDict, Set, Optional, Tuple
 from collections.abc import Iterable
 from collections import defaultdict
 from functools import reduce
@@ -32,10 +32,13 @@ class Netlist:
 
         # Map from net number to name
         self.net_names: dict[Net, str] = {}
+        # Map from net name to symbolic variable
+        self.symb_map: DefaultDict[Net, Symbol] = defaultdict(FreshSymbol)
         for (name, net) in self.top.netnames.items():
             assert len(net.bits) == 1
             assert not net.bits[0] in self.net_names
             self.net_names[net.bits[0]] = name
+            self.symb_map[net.bits[0]] = Symbol(name)
 
         # Connectivity map from the name of each net to the name of the
         # cell driving it
@@ -134,23 +137,31 @@ class Netlist:
         """Returns the set of nets in the transistive fan-in or fan-out of the input net"""
         visited: Set[Net] = {net} if not visited_nets else visited_nets.union({net})
 
-        if (fan_in and net not in self.source_map) or (
-            not fan_in and net not in self.sink_map
-        ):
-            assert self.net_names[net] in self.top.ports
+        # The only undriven nets should be primary inputs. Run opt_clean if this
+        # isn't the case
+        if fan_in and net not in self.source_map:
+            assert self.name_from_net(net) in self.top.ports
             return visited
 
-        cell = self.top.cells[self.source_map[net] if fan_in else self.sink_map[net]]
-        cell_ports = list(
-            conn
-            for conn in cell.connections
-            if cell.port_directions[conn] == ("input" if fan_in else "output")
-        )
-        fan_nets = map(lambda conn: cell.connections[conn][0], cell_ports)
+        if not fan_in and net not in self.sink_map:
+            return visited
 
-        for fan_net in fan_nets:
-            if fan_net not in visited:
-                visited = self.get_net_tfio(fan_net, visited, fan_in)
+        if fan_in:
+            cells = [self.top.cells[self.source_map[net]]]
+        else:
+            cells = list(map(self.top.cells.get, self.sink_map[net]))
+
+        for cell in cells:
+            cell_ports = list(
+                conn
+                for conn in cell.connections
+                if cell.port_directions[conn] == ("input" if fan_in else "output")
+            )
+            fan_nets = map(lambda conn: cell.connections[conn][0], cell_ports)
+
+            for fan_net in fan_nets:
+                if fan_net not in visited:
+                    visited = self.get_net_tfio(fan_net, visited, fan_in)
         return visited
 
     def get_tfi(self, nets: Iterable[Net], visited: Optional[Set[Net]] = None):
@@ -167,24 +178,22 @@ class Netlist:
         """
         return reduce(lambda v, n: self.get_net_tfio(n, v, False), nets, visited)
 
-    def get_driver_system(self, nets: Iterable[Net]) -> TransitionSystem:
+    def get_driver_system(
+        self, nets: Iterable[Net], existing_system: Optional[TransitionSystem] = None
+    ) -> Tuple[TransitionSystem, Set[Net]]:
         """
         Returns a transition system containing the logic for the cell driving
-        each net in nets. This doesn't guarantee that the driver logic for that
-        cell is included
+        each net in nets, as well as the set of nets that are unconstrained
+        inputs to this system
         """
-        # Create map from nets to smt symbols, and name symbols according to
-        # net names
-        symb_map: DefaultDict[Net, Symbol] = defaultdict(FreshSymbol)
-        symb_map.update({net: Symbol(n.name_from_net(net)) for net in nets})
-
-        system = TransitionSystem()
+        system = existing_system or TransitionSystem()
         visited_cells = set()
+        input_nets = set()
 
         for net in nets:
             # Primary inputs dont have drivers
             if net not in self.source_map:
-                assert self.net_names[net] in self.top.ports
+                assert self.name_from_net(net) in self.top.ports
                 continue
 
             # Don't include cells with more than one output net (e.g. DFF with
@@ -196,47 +205,16 @@ class Netlist:
             cell = self.top.cells[cell_name]
 
             # Create substitutions for mapping cell into transition system
-            subs = {
-                Symbol(name): symb_map[conn[0]]
-                for name, conn in cell.connections.items()
-            }
+            subs = {}
+            for name, conn in cell.connections.items():
+                subs[Symbol(name)] = self.symb_map[conn[0]]
+                # Add input nets to set of all input nets
+                if cell.port_directions[name] == "input":
+                    input_nets.add(conn[0])
 
             # Merge cell into the transition system
             system.merge_system(self.cells[cell.type], subs)
-
             # Make sure all the nets in fan-in end up in the transition system
-            assert symb_map[net] in system.variables()
+            assert self.symb_map[net] in system.variables()
 
-        return system
-
-
-n = Netlist("design/TEAMF_DESIGN.json", "design/d2lib.json")
-
-system = n.get_driver_system(
-    n.get_tfi(
-        map(
-            n.net_from_name,
-            [
-                "Q8",
-                "Q9",
-                "Q10",
-                "Q11",
-                "Q12",
-                "Q13",
-                "Q14",
-                "Q15",
-                "Q16",
-            ],
-        )
-    )
-)
-
-sym = lambda name: Symbol(name)
-
-cover = [And(Not(sym("Q16")), sym("Q15"), Not(sym("Q14")), sym("Q13"), sym("Q10"))]
-system.add_init(Not(sym("A14")))
-
-from cover_bmc import CoverBMC
-
-bmc = CoverBMC(system)
-model, time = bmc.generate_trace(cover)
+        return system, input_nets.difference(nets)

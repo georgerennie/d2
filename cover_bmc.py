@@ -4,9 +4,10 @@ properties during its execution
 Adapted from https://github.com/pysmt/pysmt/blob/master/examples/model_checking.py
 """
 
-from typing import List
+from typing import List, Optional, Tuple
 import itertools
 from pysmt.shortcuts import get_model, And, Or, Symbol, Solver
+from pysmt.solvers.solver import Model
 from pysmt.logics import QF_BV
 from transition_system import TransitionSystem
 
@@ -37,7 +38,9 @@ class CoverBMC:
             for cover in covers
         )
 
-    def generate_trace(self, covers: List[Symbol]):
+    def generate_trace(
+        self, covers: List[Symbol], timeout: Optional[int] = None
+    ) -> Tuple[Optional[Model], int]:
         """
         Find a concrete trace from the initial state that covers all cover
         properties. Returns a pysmt model that can be probed for values, and
@@ -58,3 +61,8 @@ class CoverBMC:
                 if s.solve(self.unwind_covers(covers, t)):
                     print(f"[CoverBMC] All properties covered by end of step {t}")
                     return s.get_model(), t
+
+                if timeout and t == timeout:
+                    return None, t
+
+            return None, -1
