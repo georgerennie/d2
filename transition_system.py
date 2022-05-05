@@ -56,16 +56,37 @@ class TransitionSystem:
         variables from subs. Any variables in other but not in subs are replaced
         with fresh symbols.
         """
-        self._variables.update(set(subs.values()))
+        new_system = other.map_symbols(subs)
+        self._variables.update(new_system._variables)
+        self._init += new_system._init
+        self._trans += new_system._trans
 
-        for v in other._variables:
+    def map_symbols(self, subs: Dict[Symbol, Symbol]):
+        """
+        Substitutes symbols according to subs. Any variables that dont appear
+        in subs are replaced with fresh symbols.
+        """
+        new_variables = set()
+
+        for v in self._variables:
             if v not in subs.keys():
                 symb = FreshSymbol(v.symbol_type())
-                self._variables.add(symb)
+                new_variables.add(symb)
                 subs[v] = symb
                 subs[self.next_symb(v)] = self.next_symb(symb)
             else:
+                new_variables.add(subs[v])
                 subs[self.next_symb(v)] = self.next_symb(subs[v])
 
-        self._init.append(other.init().substitute(subs))
-        self._trans.append(other.trans().substitute(subs))
+        return TransitionSystem(
+            new_variables,
+            [self.init().substitute(subs)],
+            [self.trans().substitute(subs)],
+        )
+
+    def __add__(self, other: TransitionSystem):
+        return TransitionSystem(
+            self._variables.union(other._variables),
+            self._init + other._init,
+            self._trans + other._trans,
+        )
