@@ -1,5 +1,4 @@
-# This folder contains a number of tests and scripts used when designing our
-# D2 project
+# This folder contains a number of tests and scripts used when designing our D2 project
 
 To run the tests, you need the following:
 
