@@ -1,0 +1,114 @@
+// TODO: check areas of cells
+library(d2lib) {
+  cell(INV1) {
+    area: 1.6;
+    pin(A) { direction: input; }
+    pin(Q) { direction: output;
+              function: "!A"; }
+  }
+  cell(INV10) {
+    area: 4.4;
+    pin(A) { direction: input; }
+    pin(Q) { direction: output;
+              function: "!A"; }
+  }
+  cell(BUF4) {
+    area: 3.2;
+    pin(A) { direction: input; }
+    pin(Q) { direction: output;
+              function: "A"; }
+  }
+  cell(TIE0) {
+    area: 1.6;
+    pin(Q) { direction: output;
+              function: "0"; }
+  }
+  cell(TIE1) {
+    area: 1.6;
+    pin(Q) { direction: output;
+              function: "1"; }
+  }
+  cell(XNR2) {
+    area: 4;
+    pin(A) { direction: input; }
+    pin(B) { direction: input; }
+    pin(Q) { direction: output;
+             function: "!(A ^ B)"; }
+  }
+  cell(XOR2) {
+    area: 4;
+    pin(A) { direction: input; }
+    pin(B) { direction: input; }
+    pin(Q) { direction: output;
+             function: "A ^ B"; }
+  }
+  cell(NAND2) {
+    area: 2.4;
+    pin(A) { direction: input; }
+    pin(B) { direction: input; }
+    pin(Q) { direction: output;
+             function: "!(A & B)"; }
+  }
+  cell(NAND3) {
+           area: 3.2;
+    pin(A) { direction: input; }
+    pin(B) { direction: input; }
+    pin(C) { direction: input; }
+    pin(Q) { direction: output;
+             function: "!(A & B & C)"; }
+  }
+  cell(NAND4) {
+    area: 4;
+    pin(A) { direction: input; }
+    pin(B) { direction: input; }
+    pin(C) { direction: input; }
+    pin(D) { direction: input; }
+    pin(Q) { direction: output;
+             function: "!(A & B & C & D)"; }
+  }
+  cell(NOR2) {
+    area: 2.4;
+    pin(A) { direction: input; }
+    pin(B) { direction: input; }
+    pin(Q) { direction: output;
+             function: "!(A + B)"; }
+  }
+  cell(NOR3) {
+    area: 3.2;
+    pin(A) { direction: input; }
+    pin(B) { direction: input; }
+    pin(C) { direction: input; }
+    pin(Q) { direction: output;
+             function: "!(A + B + C)"; }
+  }
+  cell(NOR4) {
+    area: 4;
+    pin(A) { direction: input; }
+    pin(B) { direction: input; }
+    pin(C) { direction: input; }
+    pin(D) { direction: input; }
+    pin(Q) { direction: output;
+             function: "!(A + B + C + D)"; }
+  }
+  cell(DFFR) {
+    area: 13.2;
+    ff(IQ, IQN) {
+      clocked_on: "Clk";
+      next_state: "D";
+      clear: "!nRst";
+    }
+    pin(D) { direction: input; }
+    pin(nRst) { direction: input; }
+    pin(Clk) { direction: input; clock: true; }
+    pin(Q) { direction: output; function: "IQ"; }
+    pin(nQ) { direction: output; function: "IQN"; }
+  }
+  cell(MUX2) {
+    area: 4.8;
+    pin(A) { direction: input; }
+    pin(B) { direction: input; }
+    pin(S) { direction: input; }
+    pin(Q) { direction: output;
+             function: "(B & S) | (A & (!S))"; }
+  }
+}

@@ -1,0 +1,45 @@
+[tasks]
+gold prove
+gate prove
+cover
+
+[options]
+prove: mode prove
+cover: mode cover
+depth 5
+
+[engines]
+smtbmc
+
+[script]
+# Load cells
+read_verilog d2lib.v
+
+# Load models
+gold:
+	read_verilog alu_gold.v
+	read_verilog -sv -DDUT_NAME=alu_gold alu_formal.sv
+--
+
+gate:
+	read_verilog TEAMF_DESIGN.v
+	read_verilog TEAMF_DESIGN_WRAPPER.v
+	read_verilog -sv -DDUT_NAME=TEAMF_ALU_WRAPPER alu_formal.sv
+--
+
+cover: read_verilog -sv -DCOVER_MODE alu_formal.sv
+
+prep -top alu_formal
+
+# This requires
+# https://github.com/georgerennie/yosys/tree/cover_precond
+cover: chformal -assert -coverprecond
+
+[files]
+gold: alu_gold.v
+gate:
+	../TEAMF_DESIGN.v
+	../TEAMF_DESIGN_WRAPPER.v
+--
+alu_formal.sv
+../d2lib.v

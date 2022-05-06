@@ -1,0 +1,47 @@
+[tasks]
+--pycode-begin--
+for i in range(7):
+	output("prop_%d" % i)
+--pycode-end--
+
+[options]
+mode prove
+depth 65
+
+[engines]
+smtbmc
+
+[script]
+# Load gold model
+read_verilog -sv register.sv
+read_verilog -sv sequencer.sv
+select -module sequencer hour10 hour1 min10 min1; expose; select -clear
+
+# Load gate model
+read_verilog d2lib.v
+read_verilog TEAMF_DESIGN.v
+read_verilog -DSEQ_EXPOSE_INT TEAMF_DESIGN_WRAPPER.v
+
+# Expose the necessary signals
+cd TEAMF_CLOCK_SEQ; expose; select -clear
+cd TEAMF_DESIGN; select TEAMF_CLOCK_SEQ_1; flatten; expose; select -clear
+
+# Load TB
+read_verilog -sv sequencer_equiv.sv
+select sequencer_equiv; fminit -seq nReset 0,'z; select -clear
+prep -top sequencer_equiv
+
+# Enable relevant assert
+--pycode-begin--
+output("select -module sequencer_equiv %s" % task)
+--pycode-end--
+chformal -assume2assert
+select -clear
+
+[files]
+sequencer_equiv.sv
+sequencer.sv
+register.sv
+../TEAMF_DESIGN.v
+../TEAMF_DESIGN_WRAPPER.v
+../d2lib.v

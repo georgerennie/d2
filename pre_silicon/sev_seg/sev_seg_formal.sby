@@ -1,0 +1,39 @@
+[tasks]
+cover gold_files
+gold gold_files prove
+gate prove
+
+[options]
+prove: mode prove
+cover: mode cover
+depth 5
+
+[engines]
+smtbmc
+
+[script]
+gold_files: read_verilog -sv sev_seg.v
+gate:
+	read_verilog d2lib.v
+	read_verilog TEAMF_DESIGN.v
+	read_verilog TEAMF_DESIGN_WRAPPER.v
+	rename TEAMF_SEV_SEG_WRAPPER sev_seg
+--
+
+read_verilog -sv sev_seg_formal.sv
+
+prep -top sev_seg_formal
+
+# This requires
+# https://github.com/georgerennie/yosys/tree/cover_precond
+cover: chformal -assert -coverprecond
+
+[files]
+sev_seg_formal.sv
+gold_files: sev_seg.v
+
+gate:
+	../d2lib.v
+	../TEAMF_DESIGN.v
+	../TEAMF_DESIGN_WRAPPER.v
+--

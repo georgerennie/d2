@@ -1,0 +1,13 @@
+read_verilog adder_gold.v
+# read_verilog -lib ../d2lib.v
+read_liberty -lib ../d2lib.lib
+
+synth
+dfflibmap -liberty ../d2lib.lib
+abc -liberty ../d2lib.lib
+opt_clean
+
+stat -liberty ../d2lib.lib
+
+write_verilog -noattr opt.v
+show -stretch

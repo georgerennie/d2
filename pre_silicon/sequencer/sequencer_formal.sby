@@ -1,0 +1,62 @@
+[tasks]
+--pycode-begin--
+for m in ["gold", "gate"]:
+	for p in ["prove", "cover"]:
+		output("%s_%s %s %s" % (m, p, m, p))
+--pycode-end--
+
+[options]
+prove: mode prove
+prove: depth 65
+
+cover: mode cover
+cover: depth 65
+
+[engines]
+smtbmc
+
+[script]
+gold:
+	read_verilog -sv register.sv
+	read_verilog -sv sequencer.sv
+
+	# Expose internal signals for testbench
+	select -module sequencer hour10 hour1 min10 min1
+	expose
+	select -clear
+--
+
+gate:
+	# Load gate model
+	read_verilog d2lib.v
+	read_verilog TEAMF_DESIGN.v
+	read_verilog -DSEQ_EXPOSE_INT TEAMF_DESIGN_WRAPPER.v
+
+	# Expose the necessary signals
+	cd TEAMF_CLOCK_SEQ; expose; select -clear
+	cd TEAMF_DESIGN; select TEAMF_CLOCK_SEQ_1; flatten; expose; select -clear
+
+	rename TEAMF_CLOCK_SEQ_WRAPPER sequencer
+--
+
+read_verilog -sv sequencer_formal.sv
+
+prep -top sequencer_formal
+
+# This requires
+# https://github.com/georgerennie/yosys/tree/cover_precond
+cover: chformal -assert -assume -coverprecond
+
+select sequencer_formal; fminit -seq nReset 0,'z; select -clear
+
+[files]
+sequencer_formal.sv
+gold:
+	sequencer.sv
+	register.sv
+--
+gate:
+	../TEAMF_DESIGN.v
+	../TEAMF_DESIGN_WRAPPER.v
+	../d2lib.v
+--

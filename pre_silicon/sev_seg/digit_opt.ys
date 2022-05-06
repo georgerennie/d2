@@ -1,0 +1,29 @@
+read_verilog -sv sev_seg.v
+read_verilog -lib ../d2lib.v
+
+# Remove all but one digit to see how yosys optimises each digit
+# proc
+# opt
+# splitnets -ports
+# select -module sev_seg seg[1] seg[2] seg[3] seg[4] seg[5] seg[6]
+# delete
+# select -clear
+
+synth
+dfflibmap -liberty ../d2lib.lib
+abc -liberty ../d2lib.lib
+opt_clean
+
+hilomap -hicell TIE1 Q -locell TIE0 Q
+hierarchy -auto-top
+
+# write_verilog -noattr digit_opt.v
+
+# write_json digit_opt.json
+# exec -- netlistsvg -o digit_opt.svg --skin ../d2lib_skin.svg digit_opt.json
+
+show -stretch
+
+# write_ilang digit_opt.il
+
+stat -liberty ../d2lib.lib

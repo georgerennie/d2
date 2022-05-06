@@ -1,0 +1,18 @@
+read_verilog ../d2lib.v
+
+read_verilog sev_seg.v
+
+read_verilog ../TEAMF_DESIGN.v
+read_verilog ../TEAMF_DESIGN_WRAPPER.v
+
+prep
+flatten
+async2sync
+equiv_make sev_seg TEAMF_SEV_SEG_WRAPPER alu_simple
+
+copy alu_simple alu_induct
+
+equiv_simple -undef alu_simple
+equiv_induct -undef alu_induct
+
+equiv_status -assert
