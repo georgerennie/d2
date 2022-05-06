@@ -56,10 +56,10 @@ class CoverBMC:
                 # Transition relation
                 s.add_assertion(self.system.trans().substitute(self.get_subs(t)))
 
-                # print(f"[CoverBMC] Checking step {t}...")
+                print(f"[CoverBMC] Checking step {t}...")
                 # Solve in relation to covers
                 if s.solve(self.unwind_covers(covers, t)):
-                    # print(f"[CoverBMC] All properties covered by end of step {t}")
+                    print(f"[CoverBMC] All properties covered by end of step {t}")
                     return s.get_model(), t
 
                 if timeout and t == timeout:

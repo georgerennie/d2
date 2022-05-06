@@ -106,12 +106,11 @@ class FaultCover(Netlist):
 fc = FaultCover(
     "design/TEAMF_DESIGN.json",
     "design/d2lib.json",
-    # "design_small/TEAMF_DESIGN.json", "design_small/d2lib.json",
-    ["Q2", "Q3", "Q4", "Q5"]
+    # ["Q2", "Q3", "Q4", "Q5"]
     # ["Q17", "Q18", "Q19", "Q20", "Q21", "Q22", "Q23"]
     # ["Q6", "Q7"]
     # ["Q13"]
-    # ["Q8", "Q9", "Q10", "Q11", "Q12", "Q13", "Q14", "Q15", "Q16"]
+    ["Q8", "Q9", "Q10", "Q11", "Q12", "Q13", "Q14", "Q15", "Q16"]
 )
 
 fc.ts.add_init(Not(fc.symb_map[fc.net_from_name("A14")]))
@@ -119,24 +118,15 @@ fc.ts.add_init(Not(fc.symb_map[fc.net_from_name("A14")]))
 print(len(fc.nets))
 nets = list(fc.nets)
 
-for net in fc.nets:
+# for net in fc.nets:
     # for i in [28, 29, 30, 34, 37]:
     # for i in range(25):
     # net = nets[i]
     # print(fc.name_from_net(net))
-    fc.cover_stuck_at(net, False)
-    fc.cover_stuck_at(net, True)
+    # fc.cover_stuck_at(net, False)
+    # fc.cover_stuck_at(net, True)
 
-# fc.cover_stuck_at(fc.net_from_name("TEAMF_CLOCK_SEQ_1.min1_1"), False)
-# fc.cover_stuck_at(fc.net_from_name("min1_1"), False)
-# print(
-#     fc.covers[0][1].variables(),
-#     fc.covers[0][1].init(),
-#     fc.covers[0][1].trans(),
-#     fc.covers[0][0],
-#     sep="\n\n"
-# )
+fc.cover_stuck_at(fc.net_from_name("TEAMF_CLOCK_SEQ_1.min1_1"), False)
 
-# with open("sev_seg_fault.vec", "w") as f:
-with open("alu_fault.vec", "w") as f:
+with open("test.vec", "w") as f:
     f.write(fc.generate_test_vectors(fc.get_trace(timeout=10)))
