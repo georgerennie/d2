@@ -10,13 +10,20 @@ from cover_bmc import CoverBMC
 
 class FaultCover(Netlist):
     def __init__(
-        self, top_json_path: str, lib_json_path: str, output_nets: Iterable[str]
+        self,
+        top_json_path: str,
+        lib_json_path: str,
+        output_nets: Iterable[str],
+        clocks: Iterable[str],
     ):
         super().__init__(top_json_path, lib_json_path)
 
-        self.nets = self.get_tfi(map(self.net_from_name, output_nets))
+        self.outputs = list(map(self.net_from_name, output_nets))
+        self.nets = self.get_tfi(self.outputs)
         self.ts, excess = self.get_driver_system(self.nets)
         assert len(excess) == 0
+
+        self.clocks = list(map(self.net_from_name, clocks))
 
         self.ports = [
             net for net in self.nets if self.name_from_net(net) in self.top.ports
@@ -39,15 +46,8 @@ class FaultCover(Netlist):
 
         subs.update({self.symb_map[net]: self.symb_map[net] for net in cut_nets})
 
-        primary_outputs = [
-            net
-            for net in tfo
-            if self.name_from_net(net) in self.top.ports
-            and self.top.ports[self.name_from_net(net)].direction == "output"
-        ]
-
         observation_points = []
-        for output in primary_outputs:
+        for output in self.outputs:
             assert output not in subs
             outer_output = FreshSymbol(self.symb_map[output].symbol_type())
             self.ts.add_variable(outer_output)
@@ -87,17 +87,29 @@ class FaultCover(Netlist):
 
         for i in range(t + 1):
             test_vectors += "\t"
-            test_vectors += "".join(
-                str(
-                    int(
-                        model.get_py_value(
+            add_clock = False
+            for port in self.ports:
+                val = model.get_py_value(
+                    TransitionSystem.at_time(self.symb_map[port], i)
+                )
+                if port in self.clocks and val:
+                    test_vectors += "0"
+                    add_clock = True
+                else:
+                    test_vectors += str(int(val))
+            test_vectors += "\n"
+
+            if add_clock:
+                test_vectors += "\t"
+                for port in self.ports:
+                    if port in self.outputs:
+                        test_vectors += "X"
+                    else:
+                        val = model.get_py_value(
                             TransitionSystem.at_time(self.symb_map[port], i)
                         )
-                    )
-                )
-                for port in self.ports
-            )
-            test_vectors += "\n"
+                        test_vectors += str(int(val))
+                test_vectors += "\n"
 
         test_vectors += "</TestVector>"
         return test_vectors
@@ -106,11 +118,13 @@ class FaultCover(Netlist):
 fc = FaultCover(
     "design/TEAMF_DESIGN.json",
     "design/d2lib.json",
-    # ["Q2", "Q3", "Q4", "Q5"]
-    # ["Q17", "Q18", "Q19", "Q20", "Q21", "Q22", "Q23"]
-    # ["Q6", "Q7"]
-    # ["Q13"]
-    ["Q8", "Q9", "Q10", "Q11", "Q12", "Q13", "Q14", "Q15", "Q16"]
+    # ["Q2", "Q3", "Q4", "Q5"],
+    # ["Q17", "Q18", "Q19", "Q20", "Q21", "Q22", "Q23"],
+    # ["Q6", "Q7"],
+    ["Q6"],
+    # ["Q13"],
+    # ["Q8", "Q9", "Q10", "Q11", "Q12", "Q13", "Q14", "Q15", "Q16"],
+    ["A13"],
 )
 
 fc.ts.add_init(Not(fc.symb_map[fc.net_from_name("A14")]))
@@ -118,15 +132,18 @@ fc.ts.add_init(Not(fc.symb_map[fc.net_from_name("A14")]))
 print(len(fc.nets))
 nets = list(fc.nets)
 
-# for net in fc.nets:
-    # for i in [28, 29, 30, 34, 37]:
-    # for i in range(25):
-    # net = nets[i]
-    # print(fc.name_from_net(net))
-    # fc.cover_stuck_at(net, False)
-    # fc.cover_stuck_at(net, True)
+for net in fc.nets:
+    fc.cover_stuck_at(net, False)
+    fc.cover_stuck_at(net, True)
 
-fc.cover_stuck_at(fc.net_from_name("TEAMF_CLOCK_SEQ_1.min1_1"), False)
+# fc.cover_stuck_at(fc.net_from_name("TEAMF_CLOCK_SEQ_1.min1_1"), False)
 
-with open("test.vec", "w") as f:
+# from pysmt.shortcuts import And
+# sym = lambda s: fc.symb_map[fc.net_from_name(s)]
+# fc.covers.append((And(
+#     sym("TEAMF_CLOCK_SEQ_1.min1_1"),
+#     sym("TEAMF_CLOCK_SEQ_1.N_35"),
+# ), TransitionSystem()))
+
+with open("button_sync_fault.vec", "w") as f:
     f.write(fc.generate_test_vectors(fc.get_trace(timeout=10)))
