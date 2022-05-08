@@ -49,6 +49,9 @@ class FaultCover(Netlist):
         observation_points = []
         for output in self.outputs:
             assert output not in subs
+            if output not in tfo:
+                continue
+
             outer_output = FreshSymbol(self.symb_map[output].symbol_type())
             self.ts.add_variable(outer_output)
             subs[self.symb_map[output]] = outer_output
@@ -121,9 +124,9 @@ fc = FaultCover(
     # ["Q2", "Q3", "Q4", "Q5"],
     # ["Q17", "Q18", "Q19", "Q20", "Q21", "Q22", "Q23"],
     # ["Q6", "Q7"],
-    ["Q6"],
+    # ["Q6"],
     # ["Q13"],
-    # ["Q8", "Q9", "Q10", "Q11", "Q12", "Q13", "Q14", "Q15", "Q16"],
+    ["Q8", "Q9", "Q10", "Q11", "Q12", "Q13", "Q14", "Q15", "Q16"],
     ["A13"],
 )
 
@@ -132,18 +135,27 @@ fc.ts.add_init(Not(fc.symb_map[fc.net_from_name("A14")]))
 print(len(fc.nets))
 nets = list(fc.nets)
 
-for net in fc.nets:
-    fc.cover_stuck_at(net, False)
-    fc.cover_stuck_at(net, True)
+# for net in fc.nets:
+# for i in range(20):
+#     net = nets[i]
+#     fc.cover_stuck_at(net, False)
+#     fc.cover_stuck_at(net, True)
 
 # fc.cover_stuck_at(fc.net_from_name("TEAMF_CLOCK_SEQ_1.min1_1"), False)
+# fc.cover_stuck_at(fc.net_from_name("TEAMF_CLOCK_SEQ_1.min1_1"), True)
 
-# from pysmt.shortcuts import And
-# sym = lambda s: fc.symb_map[fc.net_from_name(s)]
-# fc.covers.append((And(
-#     sym("TEAMF_CLOCK_SEQ_1.min1_1"),
-#     sym("TEAMF_CLOCK_SEQ_1.N_35"),
-# ), TransitionSystem()))
+from pysmt.shortcuts import And
 
-with open("button_sync_fault.vec", "w") as f:
-    f.write(fc.generate_test_vectors(fc.get_trace(timeout=10)))
+sym = lambda s: fc.symb_map[fc.net_from_name(s)]
+fc.covers.append(
+    (
+        And(
+            Not(sym("TEAMF_CLOCK_SEQ_1.hour10")),
+            sym("TEAMF_CLOCK_SEQ_1.N_39"),
+        ),
+        TransitionSystem(),
+    )
+)
+
+with open("test.vec", "w") as f:
+    f.write(fc.generate_test_vectors(fc.get_trace(timeout=100)))

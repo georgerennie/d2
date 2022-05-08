@@ -116,6 +116,9 @@ class Netlist:
 
                 trans.append(Not(next_arst).Implies(next_q.Iff(clk.Ite(d, q))))
 
+                # Simplify traces
+                trans.append(arst.Implies(Not(clk)))
+
             else:
                 assert False, f"Unknown cell type {sub_cell.type}"
 
