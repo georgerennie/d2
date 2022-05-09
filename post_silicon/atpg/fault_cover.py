@@ -69,7 +69,7 @@ class FaultCover(Netlist):
         return self.cover_observability(fault_ts, [net])
 
     def get_trace(self, timeout: int = 5) -> Tuple[Model, int]:
-        reachable_covers = []
+        reachable_covers: List[Symbol] = []
         reachable_ts = self.ts
 
         for cover, fault_ts in self.covers:
@@ -120,6 +120,7 @@ class FaultCover(Netlist):
 
 fc = FaultCover(
     "design/TEAMF_DESIGN.json",
+    # "design_small/TEAMF_DESIGN.json",
     "design/d2lib.json",
     # ["Q2", "Q3", "Q4", "Q5"],
     # ["Q17", "Q18", "Q19", "Q20", "Q21", "Q22", "Q23"],
@@ -141,21 +142,11 @@ nets = list(fc.nets)
 #     fc.cover_stuck_at(net, False)
 #     fc.cover_stuck_at(net, True)
 
-# fc.cover_stuck_at(fc.net_from_name("TEAMF_CLOCK_SEQ_1.min1_1"), False)
-# fc.cover_stuck_at(fc.net_from_name("TEAMF_CLOCK_SEQ_1.min1_1"), True)
+# fc.cover_stuck_at(fc.net_from_name("TEAMF_CLOCK_SEQ_1.min10_1"), False)
+# fc.cover_stuck_at(fc.net_from_name("TEAMF_CLOCK_SEQ_1.min10_1"), True)
 
-from pysmt.shortcuts import And
-
-sym = lambda s: fc.symb_map[fc.net_from_name(s)]
-fc.covers.append(
-    (
-        And(
-            Not(sym("TEAMF_CLOCK_SEQ_1.hour10")),
-            sym("TEAMF_CLOCK_SEQ_1.N_39"),
-        ),
-        TransitionSystem(),
-    )
-)
+fc.cover_stuck_at(fc.net_from_name("TEAMF_CLOCK_SEQ_1.N_56"), True)
+fc.cover_stuck_at(fc.net_from_name("TEAMF_CLOCK_SEQ_1.N_56"), False)
 
 with open("test.vec", "w") as f:
-    f.write(fc.generate_test_vectors(fc.get_trace(timeout=100)))
+    f.write(fc.generate_test_vectors(fc.get_trace(timeout=15)))

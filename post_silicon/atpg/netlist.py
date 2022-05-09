@@ -136,8 +136,10 @@ class Netlist:
 
     def get_net_tfio(
         self, net: Net, visited_nets: Optional[Set[Net]] = None, fan_in: bool = True
-    ):
-        """Returns the set of nets in the transistive fan-in or fan-out of the input net"""
+    ) -> Set[Net]:
+        """
+        Returns the set of nets in the transistive fan-in or fan-out of the input net
+        """
         visited: Set[Net] = {net} if not visited_nets else visited_nets.union({net})
 
         # The only undriven nets should be primary inputs. Run opt_clean if this
@@ -182,7 +184,7 @@ class Netlist:
         return reduce(lambda v, n: self.get_net_tfio(n, v, False), nets, visited)
 
     def get_driver_system(
-        self, nets: Iterable[Net], existing_system: Optional[TransitionSystem] = None
+        self, nets: Set[Net], existing_system: Optional[TransitionSystem] = None
     ) -> Tuple[TransitionSystem, Set[Net]]:
         """
         Returns a transition system containing the logic for the cell driving
@@ -204,12 +206,16 @@ class Netlist:
             cell_name = self.source_map[net]
             if cell_name in visited_cells:
                 continue
+
             visited_cells.add(cell_name)
             cell = self.top.cells[cell_name]
 
             # Create substitutions for mapping cell into transition system
             subs = {}
             for name, conn in cell.connections.items():
+                if conn[0] not in nets and cell.port_directions[name] == "output":
+                    continue
+
                 subs[Symbol(name)] = self.symb_map[conn[0]]
                 # Add input nets to set of all input nets
                 if cell.port_directions[name] == "input":
