@@ -39,12 +39,12 @@ class CoverBMC:
         )
 
     def generate_trace(
-        self, covers: List[Symbol], timeout: Optional[int] = None
+        self, covers: List[Symbol], timeout: Optional[int] = None, start: int = 0
     ) -> Tuple[Optional[Model], int]:
         """
         Find a concrete trace from the initial state that covers all cover
         properties. Returns a pysmt model that can be probed for values, and
-        the final timestep
+        the final timestep. Starts checking the covers at timestep start
         """
         with Solver(
             name=self.solver, logic=self.logic, incremental=True, generate_models=True
@@ -56,11 +56,12 @@ class CoverBMC:
                 # Transition relation
                 s.add_assertion(self.system.trans().substitute(self.get_subs(t)))
 
-                print(f"[CoverBMC] Checking step {t}...")
                 # Solve in relation to covers
-                if s.solve(self.unwind_covers(covers, t)):
-                    print(f"[CoverBMC] All properties covered by end of step {t}")
-                    return s.get_model(), t
+                if t >= start:
+                    print(f"[CoverBMC] Checking step {t}...")
+                    if s.solve(self.unwind_covers(covers, t)):
+                        print(f"[CoverBMC] All properties covered by end of step {t}")
+                        return s.get_model(), t
 
                 if timeout and t == timeout:
                     return None, t
