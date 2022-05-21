@@ -8,16 +8,11 @@ abc pdr
 # Load gold model
 read_verilog -sv register.sv
 read_verilog -sv sequencer.sv
-select -module sequencer hour10 hour1 min10 min1; expose; select -clear
 
 # Load gate model
 read_verilog d2lib.v
 read_verilog TEAMF_DESIGN.v
-read_verilog -DSEQ_EXPOSE_INT TEAMF_DESIGN_WRAPPER.v
-
-# Expose the necessary signals
-cd TEAMF_CLOCK_SEQ; expose; select -clear
-cd TEAMF_DESIGN; select TEAMF_CLOCK_SEQ_1; flatten; expose; select -clear
+read_verilog TEAMF_DESIGN_WRAPPER.v
 
 # Load TB
 read_verilog -sv sequencer_equiv.sv
