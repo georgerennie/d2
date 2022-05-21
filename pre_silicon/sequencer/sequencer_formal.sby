@@ -7,13 +7,13 @@ for m in ["gold", "gate"]:
 
 [options]
 prove: mode prove
-prove: depth 65
 
 cover: mode cover
 cover: depth 65
 
 [engines]
-smtbmc
+prove: abc pdr
+cover: smtbmc
 
 [script]
 gold:

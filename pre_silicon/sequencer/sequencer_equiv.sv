@@ -44,14 +44,14 @@ TEAMF_CLOCK_SEQ_WRAPPER gate(
 );
 
 always @* begin
-	prop_0: assume(gold_D == gate_D);
-	prop_1: assume(gold_Digit == gate_Digit);
-	prop_2: assume(gold_DP == gate_DP);
+	assert(gold_D == gate_D);
+	assert(gold_Digit == gate_Digit);
+	assert(gold_DP == gate_DP);
 
-	prop_3: assume(gold_hour10 == gate_hour10);
-	prop_4: assume(gold_hour1 == gate_hour1);
-	prop_5: assume(gold_min10 == gate_min10);
-	prop_6: assume(gold_min1 == gate_min1);
+	assert(gold_hour10 == gate_hour10);
+	assert(gold_hour1 == gate_hour1);
+	assert(gold_min10 == gate_min10);
+	assert(gold_min1 == gate_min1);
 end
 
 endmodule
