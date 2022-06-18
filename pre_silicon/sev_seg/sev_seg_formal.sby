@@ -26,7 +26,7 @@ prep -top sev_seg_formal
 
 # This requires
 # https://github.com/georgerennie/yosys/tree/cover_precond
-cover: chformal -assert -coverprecond
+cover: chformal -assert -coverenable
 
 [files]
 sev_seg_formal.sv

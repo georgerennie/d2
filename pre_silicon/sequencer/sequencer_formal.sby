@@ -45,7 +45,7 @@ prep -top sequencer_formal
 
 # This requires
 # https://github.com/georgerennie/yosys/tree/cover_precond
-cover: chformal -assert -assume -coverprecond
+cover: chformal -assert -assume -coverenable
 
 select sequencer_formal; fminit -seq nReset 0,'z; select -clear
 

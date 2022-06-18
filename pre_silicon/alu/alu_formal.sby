@@ -33,7 +33,7 @@ prep -top alu_formal
 
 # This requires
 # https://github.com/georgerennie/yosys/tree/cover_precond
-cover: chformal -assert -coverprecond
+cover: chformal -assert -coverenable
 
 [files]
 gold: alu_gold.v

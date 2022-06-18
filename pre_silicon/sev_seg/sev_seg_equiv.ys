@@ -9,6 +9,10 @@ prep
 flatten
 async2sync
 equiv_make sev_seg TEAMF_SEV_SEG_WRAPPER alu_simple
+memory_map -rom-only
+
+hierarchy -top alu_simple
+opt_clean -purge
 
 copy alu_simple alu_induct
 
