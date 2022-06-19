@@ -64,6 +64,9 @@ class CoverBMC:
                         return s.get_model(), t
 
                 if timeout and t == timeout:
+                    print(
+                        f"[CoverBMC] Properties not covered by end of step {t} (timeout)"
+                    )
                     return None, t
 
             return None, -1

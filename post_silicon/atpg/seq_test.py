@@ -9,6 +9,14 @@ from pysmt.shortcuts import Not
 
 class D2SeqTest(FaultCover):
     def __init__(self, test_name: str):
+        """
+        This implementation is a long way from ideal, it is slow and doesn't get
+        super high coverage. That's life, this code was rushed to a deadline.
+        Could be improved by more effectively utilising things like the fact
+        that bridge properties generally prove fast and dont need to be covered
+        to check viability of putting them in chunks.
+        """
+
         print(f"Creating test {test_name}")
 
         super().__init__(
@@ -69,4 +77,4 @@ class D2SeqTest(FaultCover):
             f.write(test_vectors)
 
 
-D2SeqTest("seq_test")
+D2SeqTest("seq_fault")

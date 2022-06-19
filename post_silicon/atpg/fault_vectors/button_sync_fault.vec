@@ -2,6 +2,7 @@
 	Q6,Q7,A13,A14,A15,A16
 </PinDef>
 <TestVector>
+	# New trace
 	000000
 	000100
 	XX1100
