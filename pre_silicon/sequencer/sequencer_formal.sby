@@ -12,8 +12,7 @@ cover: mode cover
 cover: depth 65
 
 [engines]
-prove: abc pdr
-cover: smtbmc
+smtbmc
 
 [script]
 gold:
