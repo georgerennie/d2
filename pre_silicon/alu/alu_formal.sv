@@ -34,10 +34,10 @@ always @* begin
 	assume(XY == { XY3, XY2, XY1, XY0 });
 
 	case (F)
-		0: assert(XY === X + Y);
-		1: assert(XY === X - Y);
-		2: assert(XY === X * 4'h2);
-		3: assert(XY === 0);
+		0: as__add: assert(XY === X + Y);
+		1: as__sub: assert(XY === X - Y);
+		2: as__mul2: assert(XY === X * 4'h2);
+		3: as__zero: assert(XY === 0);
 	endcase
 end
 

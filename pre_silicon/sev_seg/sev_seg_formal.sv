@@ -10,16 +10,16 @@ always @* begin
 	assume(data < 10);
 
 	case (data)
-		4'h0 : assert(seg === 7'b0000001);
-		4'h1 : assert(seg === 7'b1001111);
-		4'h2 : assert(seg === 7'b0010010);
-		4'h3 : assert(seg === 7'b0000110);
-		4'h4 : assert(seg === 7'b1001100);
-		4'h5 : assert(seg === 7'b0100100);
-		4'h6 : assert(seg === 7'b0100000);
-		4'h7 : assert(seg === 7'b0001111);
-		4'h8 : assert(seg === 7'b0000000);
-		4'h9 : assert(seg === 7'b0000100);
+		4'h0 : as__data_0: assert(seg === 7'b0000001);
+		4'h1 : as__data_1: assert(seg === 7'b1001111);
+		4'h2 : as__data_2: assert(seg === 7'b0010010);
+		4'h3 : as__data_3: assert(seg === 7'b0000110);
+		4'h4 : as__data_4: assert(seg === 7'b1001100);
+		4'h5 : as__data_5: assert(seg === 7'b0100100);
+		4'h6 : as__data_6: assert(seg === 7'b0100000);
+		4'h7 : as__data_7: assert(seg === 7'b0001111);
+		4'h8 : as__data_8: assert(seg === 7'b0000000);
+		4'h9 : as__data_9: assert(seg === 7'b0000100);
 	endcase
 end
 

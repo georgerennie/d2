@@ -27,9 +27,9 @@ TEAMF_CLOCK_SEQ_WRAPPER gate(
 );
 
 always @* begin
-	assert(gold_D == gate_D);
-	assert(gold_Digit == gate_Digit);
-	assert(gold_DP == gate_DP);
+	as__D_eq: assert(gold_D == gate_D);
+	as__Digit_eq: assert(gold_Digit == gate_Digit);
+	as__DP_eq: assert(gold_DP == gate_DP);
 end
 
 endmodule

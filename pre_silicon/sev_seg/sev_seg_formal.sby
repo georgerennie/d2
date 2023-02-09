@@ -9,7 +9,8 @@ cover: mode cover
 depth 5
 
 [engines]
-smtbmc
+prove: abc pdr
+cover: smtbmc
 
 [script]
 gold_files: read_verilog -sv sev_seg.v
@@ -22,7 +23,7 @@ gate:
 
 read_verilog -sv sev_seg_formal.sv
 
-prep -top sev_seg_formal
+prep -top sev_seg_formal -flatten
 
 # This requires
 # https://github.com/georgerennie/yosys/tree/cover_precond

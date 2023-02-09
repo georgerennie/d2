@@ -17,7 +17,7 @@ read_verilog TEAMF_DESIGN_WRAPPER.v
 # Load TB
 read_verilog -sv sequencer_equiv.sv
 select sequencer_equiv; fminit -seq nReset 0,'z; select -clear
-prep -top sequencer_equiv
+prep -top sequencer_equiv -flatten
 
 [files]
 sequencer_equiv.sv

@@ -59,10 +59,10 @@ end
 
 always @* begin
 	if (!nReset) begin
-		assert(hour10 == 1);
-		assert(hour1 == 2);
-		assert(min10 == 0);
-		assert(min1 == 0);
+		as__hour10_rst: assert(hour10 == 1);
+		as__hour1_rst: assert(hour1 == 2);
+		as__min10_rst: assert(min10 == 0);
+		as__min1_rst: assert(min1 == 0);
 	end
 end
 
@@ -72,32 +72,35 @@ end
 
 always @* begin
 	// Dont output a number greater than 9
-	assert(D < 10); 
+	as__D_decimal: assert(D < 10); 
 
 	// Dont light more than one Digit at once
-	assert((Digit & (Digit - 1)) == 0);
+	as__digit_onehot: assert($onehot0(Digit));
 
 	// Digits should be lit at the corresponding time
-	if (!Digit1) assert(Digit[2:0] == current_digit[2:0]);
+	if (!Digit1)
+		as__digit_cycle: assert(Digit[2:0] == current_digit[2:0]);
 
 	// Digit1 should only be lit when displaying a 1
-	if (Digit1) assert(D == 1);
-	if (Digit == 4'b0000) assert(current_digit == 4'b1000);
+	if (Digit1)
+		as__digit1_only_on_when_1: assert(D == 1);
+	if (Digit == 4'b0000)
+		as__digits_only_off_when_digit1: assert(current_digit == 4'b1000);
 
 	// Digits should output the value from their internal reg
-	if (Digit2) assert(D == hour1);
-	if (Digit3) assert(D == { 1'b0, min10 });
-	if (Digit4) assert(D == min1);
+	if (Digit2) as__digit2_output: assert(D == hour1);
+	if (Digit3) as__digit3_output: assert(D == { 1'b0, min10 });
+	if (Digit4) as__digit4_output: assert(D == min1);
 
 	// // DP should be on (active low) only for Digit 2
-	assert(DP == !Digit2);
+	as__dp_only_on_for_digit2: assert(DP == !Digit2);
 
 	// Valid ranges for each Digit
-	assert(hour10 <= 1);
-	if (hour10 == 1) assert(hour1 <= 2);
-	if (hour10 == 0) assert(hour1 >= 1 && hour1 <= 9);
-	assert(min10 <= 5);
-	assert(min1 <= 9);
+	as__hour10_0_or_1: assert(hour10 <= 1);
+	if (hour10 == 1) as__hour1_lte_2_when_hour10: assert(hour1 <= 2);
+	if (hour10 == 0) as__hour1_decimal: assert(hour1 >= 1 && hour1 <= 9);
+	as__min10_lte_5: assert(min10 <= 5);
+	as__min1_decimal: assert(min1 <= 9);
 end
 
 // ----------------------------------------------------------------------------
@@ -109,49 +112,49 @@ reg min10_tick_overflow;
 always @(posedge Clock) begin
 	if (past_valid && $past(nReset) && nReset) begin
 		// min1 increment logic
-		cover($past(Tick));
-		cover($past(SyncMinIn));
+		co__can_tick: cover($past(Tick));
+		co__can_advance_mins: cover($past(SyncMinIn));
 
 		if ($past(Tick) || $past(SyncMinIn)) begin
-			assert(min1 == ($past(min1) + 1) % 10);
+			as__min1_update: assert(min1 == ($past(min1) + 1) % 10);
 		end else begin
-			assert($stable(min1));
+			as__min1_stable: assert($stable(min1));
 		end
 
 		// min10 increment logic
 		if (!$stable(min1) && $past(min1 == 9)) begin
-			assert(min10 == ($past(min10) + 1) % 6);
+			as__min10_update: assert(min10 == ($past(min10) + 1) % 6);
 		end else begin
-			assert($stable(min10));
+			as__min10_stable: assert($stable(min10));
 		end
 
 		// hour1 increment logic
 		min10_tick_overflow =
 			!$stable(min10) && $past(min10 == 5) &&
 			$past(Tick) && $past(!SyncMinIn);
-		cover(min10_tick_overflow);
-		cover($past(SyncHourIn));
+		co__min10_tick_overflow: cover(min10_tick_overflow);
+		co__can_advance_hours: cover($past(SyncHourIn));
 
 		if (min10_tick_overflow || $past(SyncHourIn)) begin
 			if ($past(hour10 == 0) && $past(hour1 == 9)) begin
-				assert(hour1 == 0);
+				as__hour1_decimal_wrap: assert(hour1 == 0);
 			end else if ($past(hour10 == 1) && $past(hour1 == 2)) begin
-				assert(hour1 == 1);
+				as__hour1_overflow: assert(hour1 == 1);
 			end else begin
-				assert(hour1 == $past(hour1) + 1);
+				as__hour1_update: assert(hour1 == $past(hour1) + 1);
 			end
 		end else begin
-			assert($stable(hour1));
+			as__hour1_stable: assert($stable(hour1));
 		end
 
 		// hour10 increment logic
 		if (!$stable(hour1)) begin
 			if ($past(hour10 == 0) && $past(hour1 == 9)) begin
-				assert(hour10 == 1);
+				as_hour10_decimal_wrap: assert(hour10 == 1);
 			end else if ($past(hour10 == 1) && $past(hour1 == 2)) begin
-				assert(hour10 == 0);
+				as__hour10_overflow: assert(hour10 == 0);
 			end else begin
-				assert($stable(hour10));
+				as__hour10_stable: assert($stable(hour10));
 			end
 		end
 	end

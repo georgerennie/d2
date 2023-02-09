@@ -29,7 +29,7 @@ gate:
 
 cover: read_verilog -sv -DCOVER_MODE alu_formal.sv
 
-prep -top alu_formal
+prep -top alu_formal -flatten
 
 # This requires
 # https://github.com/georgerennie/yosys/tree/cover_precond

@@ -36,6 +36,8 @@ gate:
 	cd TEAMF_DESIGN; select TEAMF_CLOCK_SEQ_1; flatten; expose; select -clear
 
 	rename TEAMF_CLOCK_SEQ_WRAPPER sequencer
+
+	flatten
 --
 
 read_verilog -sv sequencer_formal.sv
